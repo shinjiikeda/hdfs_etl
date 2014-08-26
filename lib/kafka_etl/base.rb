@@ -17,6 +17,12 @@ module KafkaETL
       @zookeeper = zookeeper
       @kafka_brokers = kafka_brokers
       
+      $log = Logger.new(STDOUT) if $log.nil?
+
+      $log.debug("zookeeper: #{zookeeer}")
+      $log.debug("kafka_brokers: #{kafka_brokers}")
+      $log.debug("kafka_topic: #{kafka_topic}")
+      
     end
     
     def process()
@@ -34,14 +40,14 @@ module KafkaETL
         end
       end
       
-      STDERR.puts "total procs: #{$total_procs}"
+      $log.info "total procs: #{$total_procs}"
     end
     
     def proccess_thread(zk, part_no)
       zk_part_node = "/part_offset_#{part_no}"
       
       num_cur_part_procs = 0
-      STDERR.puts "\npart #{part_no} start"
+      $log.info "\npart #{part_no} start"
       
       if ! zk.exists?(zk_part_node)
         zk.create(zk_part_node, "0")
@@ -59,7 +65,7 @@ module KafkaETL
       rescue ZK::Exceptions::NoNode => e
         part_offset = :latest_offset
       end
-      STDERR.puts "offset: #{part_offset}"
+      $log.info "offset: #{part_offset}"
       
       cons = Poseidon::PartitionConsumer.consumer_for_partition(@kafka_client_id,
                                                                 @kafka_brokers,
@@ -70,27 +76,27 @@ module KafkaETL
         num_cur_part_procs += process_messages(cons)
         
         next_offset = cons.next_offset
-        STDERR.puts "next_offset: #{next_offset} proc: #{num_cur_part_procs}"
+        $log.info "next_offset: #{next_offset} proc: #{num_cur_part_procs}"
         $total_procs += num_cur_part_procs
         
         # set next offset to zookeper
         zk.set(zk_part_node, next_offset.to_s) if next_offset >= offset
       rescue Poseidon::Errors::NotLeaderForPartition => e
-        STDERR.puts "Skip: Not Leader For Partition"
+        $log.info "Skip: Not Leader For Partition"
       rescue Poseidon::Errors::OffsetOutOfRange => e
-        STDERR.puts e.to_s
+        $log.error e.to_s
         k.set(zk_part_node, "0")
       rescue NoMethodError => e
         next_offset = cons.next_offset
         zk.set(zk_part_node, next_offset.to_s)
-        STDERR.puts "skip"
+        $log.error "skip"
       rescue => e
         raise e
       ensure
         cons.close if ! cons.nil?
       end
     rescue Poseidon::Errors::OffsetOutOfRange => e
-      STDERR.puts e.to_s
+      $log.error e.to_s
       zk.set(zk_part_node, "0")
     end
     
