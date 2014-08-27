@@ -5,7 +5,7 @@ require 'hdfs_jruby/file'
 require 'logger'
 
 module KafkaETL
-  class Hdfs
+  class HdfsETL < Base
     
     def initialize(zookeeper, kafka_brokers, kafka_topic, hdfs_prefix, opts={})
       super(zookeeper, kafka_brokers, kafka_topic, opts)
@@ -27,7 +27,7 @@ module KafkaETL
       messages = cons.fetch
       messages.each do |m|
         key = m.key
-        val = m.value.chomp!
+        val = m.value.chomp
         
         if records.has_key?(key)
           records[key] <<  val
@@ -43,8 +43,8 @@ module KafkaETL
         (key, hash) = key.split(":", 2)
         (prefix, date, hour) =  key.split("/")
         prefix.gsub!(/\./, "/")
-        path = sprintf("%s/%s/%s/part-%02d_%02d", HDFS_PREFIX, prefix, date, hour, hash)
-        STDERR.puts "path: #{path}"
+        path = sprintf("%s/%s/%s/part-%02d_%02d", @hdfs_prefix, prefix, date, hour, hash)
+        $log.info "path: #{path}"
         Hdfs::File.open(path, "a") do | io |
           values.each do |val|
             io.puts val
