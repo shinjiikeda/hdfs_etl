@@ -1,6 +1,8 @@
 # KafkaEtl
 
-TODO: Write a gem description
+     produers => kafka => kafka_etl => storage, db
+     fluentd, etc                      ex hdfs, s3, mysql, etc
+
 
 ## Installation
 
