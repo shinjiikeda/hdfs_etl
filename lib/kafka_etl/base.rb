@@ -11,6 +11,7 @@ module KafkaETL
       
       @num_threads = opts[:num_threads] ? opts[:num_threads] : 2 
       @max_fetch_bytes = opts[:max_fetch_bytes] ? opts[:max_fetch_bytes] : 10_000_000
+      @min_fetch_bytes = opts[:min_fetch_bytes] ? opts[:min_fetch_bytes] : 1
       @kafka_clint_id = opts[:kafka_client_id] ? opts[:kafka_client_id] : "my_consumer"
       @kafka_part_num = opts[:kafka_topic_part_num] ? opts[:kafka_topic_part_num] : 4
       
@@ -74,7 +75,10 @@ module KafkaETL
                                                                 @kafka_brokers,
                                                                 @kafka_topic,
                                                                 part_no,
-                                                                part_offset, :max_wait_ms => 100, :max_bytes => @max_fetch_bytes)
+                                                                part_offset,
+                                                                :max_wait_ms => 100,
+                                                                :min_bytes => @min_fetch_bytes,
+                                                                :max_bytes => @max_fetch_bytes)
       begin
         num_cur_part_procs += process_messages(cons)
         
