@@ -14,8 +14,10 @@ kafka_topic_part_num = 4
 
 max_fetch_bytes = 50 * 1024 * 1024
 num_threads     = 4
+is_daemon = false
 
 opt = OptionParser.new
+opt.on('--daemon') {|v| is_daemon = v }
 opt.on('--zk zookeeper') {|v| zookeeper = v }
 opt.on('--topic kafka_topic_name') {|v| kafka_topic_name = v}
 opt.on('--kafka_brokers kafka_brokers') {|v| kafka_brokers = v}
@@ -33,9 +35,13 @@ etl = KafkaETL::HdfsETL.new(zookeeper, kafka_brokers, kafka_topic_name, hdfs_pre
                          :num_threads => num_threads
                          )
 
-while $exit_process == false
+if ! is_daemon
   etl.process
-  sleep 5
+else
+  while $exit_process == false
+    etl.process
+    sleep 5
+  end
 end
 
 STDERR.puts "finish"
