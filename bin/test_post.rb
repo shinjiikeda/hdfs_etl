@@ -5,7 +5,7 @@ require 'poseidon'
 require 'parallel'
 
 kafka_brokers = ["localhost:9092"]
-kafka_topic = "hlog_queue"
+kafka_topic = "hdfs_queue"
 
 producer = Poseidon::Producer.new(kafka_brokers, "my_test_producer")
 
