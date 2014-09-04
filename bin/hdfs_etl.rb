@@ -21,6 +21,7 @@ opt.on('--topic kafka_topic_name') {|v| kafka_topic_name = v}
 opt.on('--kafka_brokers kafka_brokers') {|v| kafka_brokers = v}
 opt.on('--hdfs_prefix hdfs_prefix_path') {|v| hdfs_prefix_path = v}
 opt.on('--kafka_client_id kafka_client_id') { |v| kafka_client_id = v}
+opt.parse!(ARGV)
 
 $exit_process = false
 Signal.trap(:TERM, proc{ $exit_process = true })
