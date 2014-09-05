@@ -5,6 +5,9 @@ require 'parallel'
 require 'logger'
 
 module KafkaETL
+  class MessageFormatError < StandardError; end
+  class BackendError < StandardError; end
+  
   class Base
     
     def initialize(zookeeper, kafka_brokers, kafka_topic, opts={})

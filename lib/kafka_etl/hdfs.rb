@@ -45,11 +45,15 @@ module KafkaETL
         prefix.gsub!(/\./, "/")
         path = sprintf("%s/%s/%s/part-%02d_%02d", @hdfs_prefix, prefix, date, hour, hash)
         $log.info "path: #{path}"
-        Hdfs::File.open(path, "a") do | io |
-          values.each do |val|
-            io.puts val
-            proc_num += 1
+        begin
+          Hdfs::File.open(path, "a") do | io |
+            values.each do |val|
+              io.puts val
+              proc_num += 1
+            end
           end
+        rescue => e
+          raise BackendError, e.to_s
         end
       end
       records.clear
