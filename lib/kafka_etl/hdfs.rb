@@ -18,6 +18,7 @@ module KafkaETL
     
     def process()
       super()
+      sleep(5)
     end
     
     def process_messages(cons)
@@ -29,6 +30,9 @@ module KafkaETL
         key = m.key
         val = m.value.chomp
         
+        if key.nil? || key.size > 512
+          key = "trash/#{Time.now.strftime('%Y-%m-%d/%H')}"
+        end
         if records.has_key?(key)
           records[key] <<  val
         else
@@ -37,11 +41,9 @@ module KafkaETL
       end
       
       records.each do | key, values |
-        if key.nil?
-          key = "trash/#{Time.now.strftime('%Y-%m-%d/%H')}"
-        end
-        (key, hash) = key.split(":", 2)
         (prefix, date, hour) =  key.split("/")
+        (preix, hash) = prefix.split(":", 2)
+        
         prefix.gsub!(/\./, "/")
         path = sprintf("%s/%s/%s/part-%02d_%02d", @hdfs_prefix, prefix, date, hour, hash)
         $log.info "path: #{path}"
@@ -53,6 +55,23 @@ module KafkaETL
             end
           end
         rescue => e
+          if e.class == Java::OrgApacheHadoopIpc::RemoteException && e.to_s =~ /^org\.apache\.hadoop\.hdfs\.protocol\.AlreadyBeingCreatedException/
+            $log.error("path: #{path} failure! broken file")
+            broken_dir = sprintf("%s/lost+found/%s/%s/", @hdfs_prefix, prefix, date)
+            if ! Hdfs.exists?(broken_dir)
+              Hdfs.mkdir(broken_dir)
+            end
+            $log.info "move #{path} => #{broken_dir}"
+            Hdfs.move(path, broken_dir)
+            raise BackendError, e.to_s
+          else
+            $log.error "class: #{e.class}, message: #{e.to_s}"
+            $log.debug e.backtrace
+            current_filesize = Hdfs.size(path)
+            $log.error("path: #{path} size: #{current_filesize} failure!")
+            $log.error("filesize old: #{filesize}, current: #{current_filesize}") if filesize != current_filesize
+          end
+          
           raise BackendError, e.to_s
         end
       end
