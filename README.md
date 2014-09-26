@@ -21,7 +21,7 @@ Or install it yourself as:
 ## Usage
 
     ## daemon start
-    $ bundle exec jruby -J-Xmx2048m -J-server -J-XX:+UseConcMarkSweepGC hlog_etl.rb --logfile /tmp/hdfs_etl.log --daemon >/tmp/hlog_etl.out 2>&1 &
+    $ bundle exec jruby -J-Xmx2048m -J-server -J-XX:+UseConcMarkSweepGC hdfs_etl.rb --logfile /tmp/hdfs_etl.log --daemon >/tmp/hdfs_etl.out 2>&1 &
 
 ## Contributing
 
