@@ -5,7 +5,6 @@ require 'parallel'
 require 'logger'
 
 module KafkaETL
-  class MessageFormatError < StandardError; end
   class BackendError < StandardError; end
   class Base
     def initialize(zookeeper, kafka_brokers, kafka_topic, opts={})
@@ -59,8 +58,15 @@ module KafkaETL
       zk = ZK.new(@zookeeper)
       begin
         zk_lock = "lock_hdfs_part_#{part_no}"
-        zk.with_lock(zk_lock) do
-          proccess_thread(zk, part_no)
+        locker = zk.locker(zk_lock)
+        begin
+          if locker.lock!
+            proccess_thread(zk, part_no)
+          else
+            $log.info("part: #{part_no} is aleady locked skip")
+          end
+        ensure
+          locker.unlock!
         end
       ensure
         zk.close
@@ -82,14 +88,13 @@ module KafkaETL
         offset = value.to_i
         if offset == 0
           part_offset = :earliest_offset
-        elsif offset == -1
-          part_offset = :earliest_offset
-          #part_offset = :lastest_offset
+          #part_offset = :latest_offset
         else
           part_offset = offset
         end
       rescue ZK::Exceptions::NoNode => e
-        part_offset = :latest_offset
+        part_offset = :earliest_offset
+        #part_offset = :latest_offset
       end
       $log.debug "part: #{part_no}, offset: #{part_offset}"
       
@@ -97,12 +102,15 @@ module KafkaETL
                                                                 @kafka_brokers,
                                                                 @kafka_topic,
                                                                 part_no,
-                                                                part_offset, :max_wait_ms => 0, :max_bytes => @max_fetch_bytes)
+                                                                part_offset,
+                                                                :max_wait_ms => 0,
+                                                                :max_bytes => @max_fetch_bytes)
       begin
         num_cur_part_procs += process_messages(cons, part_no)
         
         next_offset = cons.next_offset
-        $log.debug "part: #{part_no}, next_offset: #{next_offset} proc: #{num_cur_part_procs}"
+        last_offset = cons.highwater_mark
+        $log.info "part: #{part_no}, next_offset: #{next_offset}, last_offset: #{last_offset},  proc: #{num_cur_part_procs}"
         @mutex.synchronize do
           @total_procs += num_cur_part_procs
         end
@@ -110,13 +118,17 @@ module KafkaETL
         zk.set(zk_part_node, next_offset.to_s) if next_offset >= offset
       rescue Poseidon::Errors::NotLeaderForPartition => e
         $log.error "Skip: Not Leader For Partition"
+      rescue Poseidon::Errors::OffsetOutOfRange => e
+        $log.error e.to_s
+        zk.set(zk_part_node, "0")
       #rescue NoMethodError => e
       #  next_offset = cons.next_offset
       #  zk.set(zk_part_node, next_offset.to_s)
       #  $log.error e.to_s
       rescue Poseidon::Connection::ConnectionFailedError
-        $log.error "kafka connection failed."
+        $log.error "kafka connection failed"
       rescue BackendError
+        $log.debug "backend error"
         #raise e
       rescue => e
         raise e
@@ -125,7 +137,7 @@ module KafkaETL
       end
     rescue Poseidon::Errors::OffsetOutOfRange => e
       $log.error e.to_s
-      zk.set(zk_part_node, "-1")
+      zk.set(zk_part_node, "0")
     end
     
     def process_messages(cons)
