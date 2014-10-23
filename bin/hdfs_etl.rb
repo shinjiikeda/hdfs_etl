@@ -49,7 +49,7 @@ if ! is_daemon
 else
   while $exit_process == false
     etl.process
-    sleep 5
+    sleep 15
   end
 end
 
