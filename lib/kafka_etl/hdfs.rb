@@ -28,7 +28,8 @@ module KafkaETL
       messages = cons.fetch
       messages.each do |m|
         key = m.key
-        val = m.value.chomp
+        val = m.value
+        val.force_encoding('ascii-8bit')
         
         if key.nil? || key.size > 512
           key = "trash/#{Time.now.strftime('%Y-%m-%d/%H')}"
@@ -50,11 +51,12 @@ module KafkaETL
         begin
           Hdfs::File.open(path, "a") do | io |
             values.each do |val|
-              io.puts val
+              val << "\n" if ! val.end_with?("\n")
+              io.print val
               proc_num += 1
             end
           end
-        rescue => e
+        rescue Java::JavaIo::IOException => e
           if e.class == Java::OrgApacheHadoopIpc::RemoteException && e.to_s =~ /^org\.apache\.hadoop\.hdfs\.protocol\.AlreadyBeingCreatedException/
             $log.error("path: #{path} failure! broken file")
             broken_dir = sprintf("%s/lost+found/%s/%s/", @hdfs_prefix, prefix, date)
@@ -72,6 +74,13 @@ module KafkaETL
             $log.error("filesize old: #{filesize}, current: #{current_filesize}") if filesize != current_filesize
           end
           
+          raise BackendError, e.to_s
+        rescue => e
+          # unkown error
+          $log.error "class: #{e.class}, message: #{e.to_s}"
+          $log.debug e.backtrace
+          $log.error("part: #{part_no}, path: #{path} size: #{current_filesize} failure!")
+          $log.error("filesize old: #{filesize}, current: #{current_filesize}") if filesize != current_filesize
           raise BackendError, e.to_s
         end
       end
