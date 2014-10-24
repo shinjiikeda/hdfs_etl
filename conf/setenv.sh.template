@@ -1,0 +1,5 @@
+
+export HADOOP_HOME=/usr/lib/hadoop
+
+export JRUBY_OPTS="-J-server -J-Xmx2048m -J-Xms512m"
+

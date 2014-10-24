@@ -13,19 +13,27 @@ kafka_client_id="hdfs_etl_consumer"
 kafka_topic_part_num = 4
 
 max_fetch_bytes = 50 * 1024 * 1024
-num_threads     = 4
 is_daemon = false
+
+conf_path = nil
 logfile = nil
 
 opt = OptionParser.new
 opt.on('--daemon') {|v| is_daemon = v }
-opt.on('--zk zookeeper') {|v| zookeeper = v }
-opt.on('--topic kafka_topic_name') {|v| kafka_topic_name = v}
-opt.on('--kafka_brokers kafka_brokers') {|v| kafka_brokers = v}
-opt.on('--hdfs_prefix hdfs_prefix_path') {|v| hdfs_prefix_path = v}
-opt.on('--kafka_client_id kafka_client_id') { |v| kafka_client_id = v}
 opt.on('--logfile path') {|v| logfile = v}
+opt.on('--conf path') {|v| conf_path = v}
 opt.parse!(ARGV)
+
+require conf_path
+
+kafka_brokers = HdfsETLConfig::KAFKA::BROKERS
+kafka_topic_name = HdfsETLConfig::KAFKA::TOPIC
+kafka_topic_part_num = HdfsETLConfig::KAFKA::TOPIC_PART_NUM
+
+zookeeper = HdfsETLConfig::ETL::ZOOKEEPER
+hdfs_prefix = HdfsETLConfig::ETL::HDFS_PREFIX
+kafka_client_id = HdfsETLConfig::ETL::KAFKA_CLIENT_ID
+num_threads = HdfsETLConfig::ETL::NUM_THREADS
 
 if logfile.nil?
   $log = Logger.new(STDOUT)
