@@ -1,14 +1,12 @@
-# KafkaEtl
+# HdfsEtl
 
-     produers => kafka => kafka_etl => storage, db
-     fluentd, etc                      ex hdfs, s3, mysql, etc
-
+     produers => kafka => hdfs_etl => hdfs
 
 ## Installation
 
 Add this line to your application's Gemfile:
 
-    gem 'kafka_etl'
+    gem 'hdfs_etl'
 
 And then execute:
 
@@ -16,7 +14,7 @@ And then execute:
 
 Or install it yourself as:
 
-    $ gem install kafka_etl
+    $ gem install hdfs_etl
 
 ## Usage
 
