@@ -1,6 +1,6 @@
 # HdfsEtl
 
-     produers => kafka => hdfs_etl => hdfs
+     producers => kafka => hdfs_etl => hdfs
 
 ## Installation
 
