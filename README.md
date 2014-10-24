@@ -2,6 +2,13 @@
 
      producers => kafka => hdfs_etl => hdfs
 
+
+kafka post data format
+     
+     key: <path>:<hash>/<yyyy-mm-dd>/<hh>
+     value: json text
+
+
 ## Installation
 
 Add this line to your application's Gemfile:
