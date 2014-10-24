@@ -1,11 +1,11 @@
 
-require 'kafka_etl/base'
+require 'kafka_etl_base/base'
 require 'hdfs_jruby'
 require 'hdfs_jruby/file'
 require 'logger'
 
 module KafkaETL
-  class HdfsETL < Base
+  class HdfsETL < KafkaETLBase::Base
     
     def initialize(zookeeper, kafka_brokers, kafka_topic, hdfs_prefix, opts={})
       super(zookeeper, kafka_brokers, kafka_topic, opts)
