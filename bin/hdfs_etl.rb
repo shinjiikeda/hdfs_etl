@@ -1,16 +1,8 @@
 #!/usr/bin/env jruby
 
-require 'kafka_etl/hdfs'
+require 'hdfs_etl'
 require 'optparse'
 require 'logger'
-
-zookeeper = 'localhost:2181/hdfs_etl'
-kafka_brokers = ["localhost:9092"]
-kafka_topic_name = "hdfs_queue"
-hdfs_prefix = "./test_etl"
-
-kafka_client_id="hdfs_etl_consumer"
-kafka_topic_part_num = 4
 
 max_fetch_bytes = 50 * 1024 * 1024
 is_daemon = false
@@ -45,7 +37,7 @@ $log.level = Logger::INFO
 $exit_process = false
 Signal.trap(:TERM, proc{ $exit_process = true })
 
-etl = KafkaETL::HdfsETL.new(zookeeper, kafka_brokers, kafka_topic_name, hdfs_prefix,
+etl = HdfsETL.new(zookeeper, kafka_brokers, kafka_topic_name, hdfs_prefix,
                          :kafka_client_id => kafka_client_id,
                          :kafka_topic_part_num => kafka_topic_part_num,
                          :max_fetch_bytes => max_fetch_bytes,
