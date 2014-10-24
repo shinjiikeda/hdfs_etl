@@ -15,7 +15,7 @@ module HdfsETLConfig
   end
   
   module POST_KAFKA
-    QUEUE_PATH = '/data/game/JP/kafka_queue/'
+    QUEUE_PATH = './queue/'
   end
 end
 
