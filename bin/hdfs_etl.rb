@@ -37,7 +37,7 @@ $log.level = Logger::INFO
 $exit_process = false
 Signal.trap(:TERM, proc{ $exit_process = true })
 
-etl = HdfsETL.new(zookeeper, kafka_brokers, kafka_topic_name, hdfs_prefix,
+etl = HdfsETL::ETL.new(zookeeper, kafka_brokers, kafka_topic_name, hdfs_prefix,
                          :kafka_client_id => kafka_client_id,
                          :kafka_topic_part_num => kafka_topic_part_num,
                          :max_fetch_bytes => max_fetch_bytes,
