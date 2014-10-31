@@ -8,7 +8,7 @@ kafka message format
      key: <path>:<hash>/<yyyy-mm-dd>/<hh>
      value: json text
 
-buuk post message file format
+bulk post message file format
      
      <path>\t<timestamp>\t<json>\n
      ...
