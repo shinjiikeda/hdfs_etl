@@ -3,11 +3,16 @@
      producers => kafka => hdfs_etl => hdfs
 
 
-kafka post data format
+kafka data format
      
      key: <path>:<hash>/<yyyy-mm-dd>/<hh>
      value: json text
 
+post message format
+     
+     path\ttimestamp\tmessage\n
+     ...
+     
 
 ## Installation
 
