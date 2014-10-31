@@ -13,7 +13,7 @@ module HdfsETL
       
       if ! Hdfs.exists?(@hdfs_prefix)
         Hdfs.mkdir(@hdfs_prefix)
-       end
+      end
     end
     
     def process()
@@ -21,15 +21,17 @@ module HdfsETL
       sleep(5)
     end
     
-    def process_messages(cons)
+    def process_messages(cons, part_no)
       proc_num = 0
       
       records = {}
       messages = cons.fetch
       messages.each do |m|
+        proc_num += 1
         key = m.key
         val = m.value
         val.force_encoding('ascii-8bit')
+        val << "\n" if ! val.end_with?("\n")
         
         if key.nil? || key.size > 512
           key = "trash/#{Time.now.strftime('%Y-%m-%d/%H')}"
@@ -37,25 +39,33 @@ module HdfsETL
         if records.has_key?(key)
           records[key] <<  val
         else
-          records[key] = [ val ]
+          records[key] = val
         end
       end
       
       records.each do | key, values |
+        next if values.bytesize == 0
         (prefix, date, hour) =  key.split("/")
         (preix, hash) = prefix.split(":", 2)
         
         prefix.gsub!(/\./, "/")
-        path = sprintf("%s/%s/%s/part-%02d_%02d", @hdfs_prefix, prefix, date, hour, hash)
-        $log.info "path: #{path}"
+        path = sprintf("%s/%s/%s/part-%05d_%02d", @hdfs_prefix, prefix, date, hour, hash)
+        
+        if Hdfs.exists?(path)
+          filesize = Hdfs.size(path)
+          mode = "a"
+        else
+          filesize = 0
+          mode = "w"
+        end
+        
         begin
-          Hdfs::File.open(path, "a") do | io |
-            values.each do |val|
-              val << "\n" if ! val.end_with?("\n")
-              io.print val
-              proc_num += 1
-            end
+          $log.info "part: #{part_no}, path: #{path} size: #{filesize} start"
+          Hdfs::File.open(path, mode) do | io |
+            io.write values
           end
+          current_filesize = Hdfs.size(path)
+          $log.info("part: #{part_no}, path: #{path} size: #{current_filesize} success")
         rescue Java::JavaIo::IOException => e
           if e.class == Java::OrgApacheHadoopIpc::RemoteException && e.to_s =~ /^org\.apache\.hadoop\.hdfs\.protocol\.AlreadyBeingCreatedException/
             $log.error("path: #{path} failure! broken file")
@@ -70,7 +80,7 @@ module HdfsETL
             $log.error "class: #{e.class}, message: #{e.to_s}"
             $log.debug e.backtrace
             current_filesize = Hdfs.size(path)
-            $log.error("path: #{path} size: #{current_filesize} failure!")
+            $log.error("part: #{part_no}, path: #{path} size: #{current_filesize} failure!")
             $log.error("filesize old: #{filesize}, current: #{current_filesize}") if filesize != current_filesize
           end
           
@@ -84,9 +94,9 @@ module HdfsETL
           raise BackendError, e.to_s
         end
       end
-      records.clear
       
       return proc_num
     end
   end
 end
+
