@@ -4,14 +4,14 @@ module HdfsETLConfig
   module KAFKA
    BROKERS = ["localhost:9092"]
    TOPIC   = "hdfs_queue"
-   TOPIC_PART_NUM = 64
+   TOPIC_PART_NUM = 4
   end
   
   module ETL
     ZOOKEEPER       = 'localhost:2181/hdfs_etl'
     HDFS_PREFIX     = "./test_etl"
     KAFKA_CLIENT_ID = "hdfs_etl_consumer"
-    NUM_THREADS     = 8
+    NUM_THREADS     = 2
   end
   
   module POST_KAFKA

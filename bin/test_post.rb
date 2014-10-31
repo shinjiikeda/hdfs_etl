@@ -7,9 +7,9 @@ require 'parallel'
 kafka_brokers = ["localhost:9092"]
 kafka_topic = "hdfs_queue"
 
-producer = Poseidon::Producer.new(kafka_brokers, "my_test_producer")
 
 Parallel.each([ * 0 ... 4 ], :in_threads => 4) do |n|
+  producer = Poseidon::Producer.new(kafka_brokers, "my_test_producer")
   messages = []
   100000.times.each do | n |
     now = Time.now
