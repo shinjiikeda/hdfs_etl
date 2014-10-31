@@ -3,14 +3,14 @@
      producers => kafka => hdfs_etl => hdfs
 
 
-kafka data format
+kafka message format
      
      key: <path>:<hash>/<yyyy-mm-dd>/<hh>
      value: json text
 
-post message format
+buuk post message file format
      
-     path\ttimestamp\tmessage\n
+     <path>\t<timestamp>\t<json>\n
      ...
      
 
