@@ -5,5 +5,5 @@ gemspec
 
 gem 'hdfs_jruby'
 gem 'kafka_etl_base'
-gem 'poseidon' :git => 'https://github.com/bpot/poseidon.git'
+gem 'poseidon', :git => 'https://github.com/bpot/poseidon.git'
 
