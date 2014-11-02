@@ -18,7 +18,7 @@ module HdfsETL
     
     def process()
       super()
-      sleep(5)
+      sleep(10)
     end
     
     def process_messages(cons, part_no)
@@ -69,7 +69,8 @@ module HdfsETL
         rescue Java::JavaIo::IOException => e
           if e.class == Java::OrgApacheHadoopIpc::RemoteException && e.to_s =~ /^org\.apache\.hadoop\.hdfs\.protocol\.AlreadyBeingCreatedException/
             $log.error("path: #{path} failure! broken file")
-            broken_dir = sprintf("%s/lost+found/%s/%s/", @hdfs_prefix, prefix, date)
+            _dir =  File.dirname(path)
+            broken_dir = sprintf("%s/lost+found/%s", @hdfs_prefix, _dir)
             if ! Hdfs.exists?(broken_dir)
               Hdfs.mkdir(broken_dir)
             end
