@@ -5,6 +5,9 @@ require 'hdfs_jruby/file'
 require 'logger'
 
 module HdfsETL
+  class BackendError < KafkaETLBase::BackendError
+  end
+
   class ETL < KafkaETLBase::Base
     
     def initialize(zookeeper, kafka_brokers, kafka_topic, hdfs_prefix, opts={})
@@ -92,7 +95,7 @@ module HdfsETL
           $log.debug e.backtrace
           $log.error("part: #{part_no}, path: #{path} size: #{current_filesize} failure!")
           $log.error("filesize old: #{filesize}, current: #{current_filesize}") if filesize != current_filesize
-          raise BackendError, e.to_s
+          raise BackendError, e.to_s if e.class != IOError
         end
       end
       
