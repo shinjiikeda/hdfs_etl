@@ -17,7 +17,17 @@ PID_FILE=$LOG_DIR/hdfs_etl.pid
 if [ -f $PID_FILE ]; then
   pid=`cat $PID_FILE`
   kill $pid
-  
+
+  # wait 3min
+  for i in {0..17}; do
+    if [ ! -f /proc/$pid/status ];then
+      break
+    fi
+    echo -n "."
+    sleep 10
+  done
+  echo ""
+
   rm -f $PID_FILE
 else
   echo "not running.."

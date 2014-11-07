@@ -69,7 +69,7 @@ module HdfsETL
           end
           current_filesize = Hdfs.size(path)
           $log.info("part: #{part_no}, path: #{path} size: #{current_filesize} success")
-        rescue java.io.IOException => e
+        rescue IOError, java.io.IOException => e
           if e.class == Java::OrgApacheHadoopIpc::RemoteException && e.to_s =~ /^org\.apache\.hadoop\.hdfs\.protocol\.AlreadyBeingCreatedException/
             $log.error("path: #{path} failure! broken file")
             _dir =  File.dirname(path)
@@ -95,7 +95,7 @@ module HdfsETL
           $log.error e.backtrace
           $log.error("part: #{part_no}, path: #{path} size: #{current_filesize} failure!")
           $log.error("filesize old: #{filesize}, current: #{current_filesize}") if filesize != current_filesize
-          raise BackendError, e.to_s if e.class != IOError
+          raise BackendError, e.to_s
         end
       end
       
