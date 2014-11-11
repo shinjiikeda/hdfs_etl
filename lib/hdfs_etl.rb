@@ -64,31 +64,41 @@ module HdfsETL
         
         begin
           $log.info "part: #{part_no}, path: #{path} size: #{filesize} start"
-          Hdfs::File.open(path, mode) do | io |
-            io.write values
-          end
-          current_filesize = Hdfs.size(path)
-          $log.info("part: #{part_no}, path: #{path} size: #{current_filesize} success")
-        rescue IOError, java.io.IOException => e
-          if e.class == Java::OrgApacheHadoopIpc::RemoteException && e.to_s =~ /^org\.apache\.hadoop\.hdfs\.protocol\.AlreadyBeingCreatedException/
-            $log.error("path: #{path} failure! broken file")
-            _dir =  File.dirname(path)
-            broken_dir = sprintf("%s/lost+found/%s", @hdfs_prefix, _dir)
-            if ! Hdfs.exists?(broken_dir)
-              Hdfs.mkdir(broken_dir)
+          is_success = false
+          3.times.each do | n |
+            begin
+              $log.info("retry..") if n > 0
+              Hdfs::File.open(path, mode) do | io |
+                io.write values
+              end
+              current_filesize = Hdfs.size(path)
+              $log.info("part: #{part_no}, path: #{path} size: #{current_filesize} success")
+              is_successs = true
+              break
+            rescue IOError, java.io.IOException => e
+              if e.class == Java::OrgApacheHadoopIpc::RemoteException && e.to_s =~ /^org\.apache\.hadoop\.hdfs\.protocol\.AlreadyBeingCreatedException/
+                $log.error("path: #{path} failure! broken file")
+                _dir =  File.dirname(path)
+                broken_dir = sprintf("%s/lost+found/%s", @hdfs_prefix, _dir)
+                if ! Hdfs.exists?(broken_dir)
+                  Hdfs.mkdir(broken_dir)
+                end
+                $log.info "move #{path} => #{broken_dir}"
+                Hdfs.move(path, broken_dir)
+              else
+                $log.error "class: #{e.class}, message: #{e.to_s}"
+                $log.error e.backtrace
+                current_filesize = Hdfs.size(path)
+                $log.error("part: #{part_no}, path: #{path} size: #{current_filesize} failure!")
+                $log.error("filesize old: #{filesize}, current: #{current_filesize}") if filesize != current_filesize
+              end
             end
-            $log.info "move #{path} => #{broken_dir}"
-            Hdfs.move(path, broken_dir)
-            raise BackendError, e.to_s
-          else
-            $log.error "class: #{e.class}, message: #{e.to_s}"
-            $log.error e.backtrace
-            current_filesize = Hdfs.size(path)
-            $log.error("part: #{part_no}, path: #{path} size: #{current_filesize} failure!")
-            $log.error("filesize old: #{filesize}, current: #{current_filesize}") if filesize != current_filesize
+            sleep 10
           end
-          
-          raise BackendError, e.to_s
+          if ! is_success
+            $log.error("part: #{part_no}, path: #{path} size: #{current_filesize} failure!")
+            raise BackendError, "part: #{part_no}, path: #{path} failure!"
+          end
         rescue => e
           # unkown error
           $log.error "class: #{e.class}, message: #{e.to_s}"
