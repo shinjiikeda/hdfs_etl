@@ -127,6 +127,7 @@ def post_hlog
       File.delete(tmpfile)
       
       $logger.info("#{file} rec_cnt: #{rec_cnt}, send_num: #{send_num}, skip: #{skip_num}")
+      producer.close
   rescue => e
       $logger.error(e.to_s)
       $logger.error(e.backtrace.to_s)
