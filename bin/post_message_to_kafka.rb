@@ -100,15 +100,27 @@ def post_hlog
           #logger.debug("key: #{key}")
           #logger.debug("val: #{val}")
           
-          messages << Poseidon::MessageToSend.new($kafka_topic, val, key)
+          _m = Poseidon::MessageToSend.new($kafka_topic, val, key)
+          if _m.nil?
+            $log.error("message is nil")
+            skip_num += 1
+            next
+          end
+          
+          messages << _m
           message_bytes += val.bytesize
           
-          if messages.size > 1000 || message_bytes > 5_000_000
+          if messages.size > 500 || message_bytes > 5_000_000
             begin
-              producer.send_messages(messages)
-              send_num += messages.size
-            rescue
+              r = producer.send_messages(messages)
+              if r == true
+                send_num += messages.size
+              else
+                skip_num += messages.size
+              end
+            rescue => e
               $logger.error("skip ..")
+              $logger.error(e.to_s)
             end
             messages = []
             message_bytes = 0
@@ -118,8 +130,12 @@ def post_hlog
       
       if messages.size > 0
         begin
-          producer.send_messages(messages) 
-          send_num += messages.size
+          r = producer.send_messages(messages) 
+          if r == true
+            send_num += messages.size
+          else
+            skip_num += messages.size
+          end
         rescue
           $logger.error("skip ..")
         end
