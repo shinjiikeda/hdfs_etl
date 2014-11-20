@@ -45,6 +45,7 @@ module HdfsETL
           records[key] = val
         end
       end
+      messages=nil
       
       records.each do | key, values |
         next if values.bytesize == 0
