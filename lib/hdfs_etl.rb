@@ -13,13 +13,24 @@ module HdfsETL
     def initialize(zookeeper, kafka_brokers, kafka_topic, hdfs_prefix, opts={})
       super(zookeeper, kafka_brokers, kafka_topic, opts)
       @hdfs_prefix = hdfs_prefix
+      @hdfs_user = opts[:hdfs_user] ? opts[:hdfs_user] : nil
       
-      if ! Hdfs.exists?(@hdfs_prefix)
-        Hdfs.mkdir(@hdfs_prefix)
+      if ! @hdfs_user.nil?
+        Hdfs.connectAsUser(@hdfs_user)
       end
     end
     
     def process()
+      
+      if ! Hdfs.exists?(@hdfs_prefix)
+        Hdfs.mkdir(@hdfs_prefix)
+      end
+      
+      if ! test_hdfs()
+        $log.error("hdfs is readonly or down...")
+        return
+      end
+      
       super()
       sleep(10)
     end
@@ -112,6 +123,57 @@ module HdfsETL
       
       return proc_num
     end
+  
+    def test_hdfs()
+      hostname = `hostname`.chomp!
+      tmpfile = "/tmp/medjed_hlog_etl_check_#{hostname}.#{$$}.tmp"
+      begin
+        if Hdfs.exists?(tmpfile)
+          Hdfs.delete(tmpfile)
+        end
+        Hdfs::File.open(tmpfile, "w") do |io|
+          io.print "test\n"
+        end
+        return true
+      rescue
+        $log.error("hdfs check failed..")
+        return false
+      ensure
+        begin
+          if Hdfs.exists?(tmpfile)
+            Hdfs.delete(tmpfile)
+          end
+        rescue
+          $log.error("hdfs check failed..")
+          return false
+        end
+      end
+    end
+    
+    def test_hdfs()
+      hostname = `hostname`.chomp!
+      tmpfile = "/tmp/medjed_hlog_etl_check_#{hostname}.#{$$}.tmp"
+      begin
+        if Hdfs.exists?(tmpfile)
+          Hdfs.delete(tmpfile)
+        end
+        Hdfs::File.open(tmpfile, "w") do |io|
+          io.print "test\n"
+        end
+        return true
+      rescue
+        $log.error("hdfs check failed..")
+        return false
+      ensure
+        begin
+          if Hdfs.exists?(tmpfile)
+            Hdfs.delete(tmpfile)
+          end
+        rescue
+          $log.error("hdfs check failed..")
+          return false
+        end
+      end
+    end
   end
 end
-

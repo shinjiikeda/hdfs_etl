@@ -4,7 +4,6 @@ require 'hdfs_etl'
 require 'optparse'
 require 'logger'
 
-max_fetch_bytes = 50 * 1024 * 1024
 is_daemon = false
 
 conf_path = nil
@@ -23,9 +22,11 @@ kafka_topic_name = HdfsETLConfig::KAFKA::TOPIC
 kafka_topic_part_num = HdfsETLConfig::KAFKA::TOPIC_PART_NUM
 
 zookeeper = HdfsETLConfig::ETL::ZOOKEEPER
+hdfs_user = HdfsETLConfig::ETL::HDFS_USER
 hdfs_prefix = HdfsETLConfig::ETL::HDFS_PREFIX
 kafka_client_id = HdfsETLConfig::ETL::KAFKA_CLIENT_ID
 num_threads = HdfsETLConfig::ETL::NUM_THREADS
+max_fetch_bytes = MedjedHlogETLConfig::ETL::MAX_FETCH_BYTES
 
 if logfile.nil?
   $log = Logger.new(STDOUT)
@@ -41,6 +42,7 @@ etl = HdfsETL::ETL.new(zookeeper, kafka_brokers, kafka_topic_name, hdfs_prefix,
                          :kafka_client_id => kafka_client_id,
                          :kafka_topic_part_num => kafka_topic_part_num,
                          :max_fetch_bytes => max_fetch_bytes,
+                         :hdfs_user => hdfs_user,
                          :num_threads => num_threads
                          )
 

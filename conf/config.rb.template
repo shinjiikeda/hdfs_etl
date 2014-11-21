@@ -5,6 +5,7 @@ module HdfsETLConfig
    BROKERS = ["localhost:9092"]
    TOPIC   = "hdfs_queue"
    TOPIC_PART_NUM = 4
+   MIN_BROKERS_NUM = 1
   end
   
   module ETL
