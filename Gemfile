@@ -4,6 +4,6 @@ source 'https://rubygems.org'
 gemspec
 
 gem 'hdfs_jruby'
-gem 'kafka_etl_base'
+gem 'kafka_etl_base', '>=0.0.9'
 gem 'poseidon', :git => 'https://github.com/bpot/poseidon.git'
 
