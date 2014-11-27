@@ -39,8 +39,7 @@ module HdfsETL
       proc_num = 0
       
       records = {}
-      messages = cons.fetch
-      messages.each do |m|
+      cons.fetch.each do |m|
         proc_num += 1
         key = m.key
         val = m.value
@@ -56,7 +55,6 @@ module HdfsETL
           records[key] = val
         end
       end
-      messages=nil
       
       records.each do | key, values |
         next if values.bytesize == 0
@@ -98,7 +96,7 @@ module HdfsETL
                 $log.info "move #{path} => #{broken_dir}"
                 Hdfs.move(path, broken_dir)
               else
-                $log.error "class: #{e.class}, message: #{e.to_s}"
+                $log.error e.inspect
                 $log.error e.backtrace
                 current_filesize = Hdfs.size(path)
                 $log.error("part: #{part_no}, path: #{path} size: #{current_filesize} failure!")
@@ -113,7 +111,7 @@ module HdfsETL
           end
         rescue => e
           # unkown error
-          $log.error "class: #{e.class}, message: #{e.to_s}"
+          $log.error e.inspect
           $log.error e.backtrace
           $log.error("part: #{part_no}, path: #{path} size: #{current_filesize} failure!")
           $log.error("filesize old: #{filesize}, current: #{current_filesize}") if filesize != current_filesize
@@ -150,30 +148,5 @@ module HdfsETL
       end
     end
     
-    def test_hdfs()
-      hostname = `hostname`.chomp!
-      tmpfile = "/tmp/medjed_hlog_etl_check_#{hostname}.#{$$}.tmp"
-      begin
-        if Hdfs.exists?(tmpfile)
-          Hdfs.delete(tmpfile)
-        end
-        Hdfs::File.open(tmpfile, "w") do |io|
-          io.print "test\n"
-        end
-        return true
-      rescue
-        $log.error("hdfs check failed..")
-        return false
-      ensure
-        begin
-          if Hdfs.exists?(tmpfile)
-            Hdfs.delete(tmpfile)
-          end
-        rescue
-          $log.error("hdfs check failed..")
-          return false
-        end
-      end
-    end
   end
 end
