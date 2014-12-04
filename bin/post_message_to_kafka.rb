@@ -114,14 +114,7 @@ def post_messages
           #logger.debug("key: #{key}")
           #logger.debug("val: #{val}")
           
-          _m = Poseidon::MessageToSend.new($kafka_topic, val, key)
-          if _m.nil?
-            err_queue.push(val)
-            pend_num += 1
-            next
-          end
-          
-          messages << _m
+          messages = Poseidon::MessageToSend.new($kafka_topic, val, key)
           message_bytes += val.bytesize
           
           if messages.size > 500 || message_bytes > 5_000_000
@@ -158,8 +151,13 @@ end
 
 def send_messages(producer, messages, queue)
   begin
-    producer.send_messages(messages) if ! messages.nil?
-    return 0
+    fail_messages = producer.send_messages2(messages) if ! messages.nil?
+    if ! fail_messages || fail_messages.size == 0
+      return 0
+    end
+    $logger.error("send_messages failed")
+    store_failed_messsages(fail_messages, queue)
+    return fail_messages.size
   rescue => e
     $logger.error("send_messages failed")
     $logger.error(e.to_s)
