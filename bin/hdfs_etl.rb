@@ -26,7 +26,7 @@ hdfs_user = HdfsETLConfig::ETL::HDFS_USER
 hdfs_prefix = HdfsETLConfig::ETL::HDFS_PREFIX
 kafka_client_id = HdfsETLConfig::ETL::KAFKA_CLIENT_ID
 num_threads = HdfsETLConfig::ETL::NUM_THREADS
-max_fetch_bytes = MedjedHlogETLConfig::ETL::MAX_FETCH_BYTES
+max_fetch_bytes = HdfsETLConfig::ETL::MAX_FETCH_BYTES
 
 if logfile.nil?
   $log = Logger.new(STDOUT)

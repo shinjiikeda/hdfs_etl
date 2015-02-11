@@ -64,6 +64,10 @@ module HdfsETL
         prefix.gsub!(/\./, "/")
         path = sprintf("%s/%s/%s/part-%05d_%02d", @hdfs_prefix, prefix, date, hour, hash)
         
+        if ! Hdfs.exists?(File.dirname(path))
+          Hdfs.mkdir(File.dirname(path))
+        end
+        
         if Hdfs.exists?(path)
           filesize = Hdfs.size(path)
           mode = "a"
@@ -83,7 +87,7 @@ module HdfsETL
               end
               current_filesize = Hdfs.size(path)
               $log.info("part: #{part_no}, path: #{path} size: #{current_filesize} success")
-              is_successs = true
+              is_success = true
               break
             rescue IOError, java.io.IOException => e
               if e.class == Java::OrgApacheHadoopIpc::RemoteException && e.to_s =~ /^org\.apache\.hadoop\.hdfs\.protocol\.AlreadyBeingCreatedException/
@@ -106,6 +110,7 @@ module HdfsETL
             sleep 10
           end
           if ! is_success
+            current_filesize = 0 if current_filesize.nil?
             $log.error("part: #{part_no}, path: #{path} size: #{current_filesize} failure!")
             raise BackendError, "part: #{part_no}, path: #{path} failure!"
           end
@@ -113,6 +118,7 @@ module HdfsETL
           # unkown error
           $log.error e.inspect
           $log.error e.backtrace
+          current_filesize = 0 if current_filesize.nil?
           $log.error("part: #{part_no}, path: #{path} size: #{current_filesize} failure!")
           $log.error("filesize old: #{filesize}, current: #{current_filesize}") if filesize != current_filesize
           raise BackendError, e.to_s
@@ -124,7 +130,7 @@ module HdfsETL
   
     def test_hdfs()
       hostname = `hostname`.chomp!
-      tmpfile = "/tmp/medjed_hlog_etl_check_#{hostname}.#{$$}.tmp"
+      tmpfile = "/tmp/html_etl_check_#{hostname}.#{$$}.tmp"
       begin
         if Hdfs.exists?(tmpfile)
           Hdfs.delete(tmpfile)

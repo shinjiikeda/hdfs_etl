@@ -11,6 +11,8 @@ module HdfsETLConfig
   module ETL
     ZOOKEEPER       = 'localhost:2181/hdfs_etl'
     HDFS_PREFIX     = "./test_etl"
+    HDFS_USER       = "hdfs"
+    MAX_FETCH_BYTES = 1_000_000
     KAFKA_CLIENT_ID = "hdfs_etl_consumer"
     NUM_THREADS     = 2
   end
