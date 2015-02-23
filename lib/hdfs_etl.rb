@@ -62,7 +62,7 @@ module HdfsETL
         (preix, hash) = prefix.split(":", 2)
         
         prefix.gsub!(/\./, "/")
-        path = sprintf("%s/%s/%s/part-%05d_%02d", @hdfs_prefix, prefix, date, hour, hash)
+        path = sprintf("%s/%s/%s/part-%05d_%02d", @hdfs_prefix, prefix, date, hour.to_i, hash.to_i)
         
         if ! Hdfs.exists?(File.dirname(path))
           Hdfs.mkdir(File.dirname(path))
