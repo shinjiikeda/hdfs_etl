@@ -43,6 +43,7 @@ module HdfsETL
         proc_num += 1
         key = m.key
         val = m.value
+        next if val.nil?
         val.force_encoding('ascii-8bit')
         val << "\n" if ! val.end_with?("\n")
         
