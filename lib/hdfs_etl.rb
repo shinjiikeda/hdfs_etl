@@ -90,23 +90,21 @@ module HdfsETL
               $log.info("part: #{part_no}, path: #{path} size: #{current_filesize} success")
               is_success = true
               break
-            rescue IOError, java.io.IOException => e
-              if e.class == Java::OrgApacheHadoopIpc::RemoteException && e.to_s =~ /^org\.apache\.hadoop\.hdfs\.protocol\.AlreadyBeingCreatedException/
-                $log.error("path: #{path} failure! broken file")
-                _dir =  File.dirname(path)
-                broken_dir = sprintf("%s/lost+found/%s", @hdfs_prefix, _dir)
-                if ! Hdfs.exists?(broken_dir)
-                  Hdfs.mkdir(broken_dir)
-                end
-                $log.info "move #{path} => #{broken_dir}"
-                Hdfs.move(path, broken_dir)
-              else
-                $log.error e.inspect
-                $log.error e.backtrace
-                current_filesize = Hdfs.size(path)
-                $log.error("part: #{part_no}, path: #{path} size: #{current_filesize} failure!")
-                $log.error("filesize old: #{filesize}, current: #{current_filesize}") if filesize != current_filesize
+            rescue org.apache.hadoop.hdfs.protocol.AlreadyBeingCreatedException => e
+              $log.error("path: #{path} failure! broken file")
+              _dir =  File.dirname(path)
+              broken_dir = sprintf("%s/lost+found/%s", @hdfs_prefix, _dir)
+              if ! Hdfs.exists?(broken_dir)
+                Hdfs.mkdir(broken_dir)
               end
+              $log.info "move #{path} => #{broken_dir}"
+              Hdfs.move(path, broken_dir)
+            rescue IOError, java.io.IOException => e
+              $log.error e.inspect
+              $log.error e.backtrace
+              current_filesize = Hdfs.size(path)
+              $log.error("part: #{part_no}, path: #{path} size: #{current_filesize} failure!")
+              $log.error("filesize old: #{filesize}, current: #{current_filesize}") if filesize != current_filesize
             end
             sleep 10
           end
