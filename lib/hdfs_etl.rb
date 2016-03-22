@@ -90,7 +90,8 @@ module HdfsETL
               $log.info("part: #{part_no}, path: #{path} size: #{current_filesize} success")
               is_success = true
               break
-            rescue org.apache.hadoop.hdfs.protocol.AlreadyBeingCreatedException => e
+            rescue org.apache.hadoop.ipc.RemoteException, org.apache.hadoop.hdfs.protocol.AlreadyBeingCreatedException => e
+            #rescue org.apache.hadoop.hdfs.protocol.AlreadyBeingCreatedException => e
               $log.error("path: #{path} failure! broken file")
               _dir =  File.dirname(path)
               broken_dir = sprintf("%s/lost+found/%s", @hdfs_prefix, _dir)
